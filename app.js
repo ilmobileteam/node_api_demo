@@ -38,7 +38,7 @@ app.use((err, req, res, next) => {
 });
 
 mongoose
-  .connect(MONGODB_URI)
+  .connect(process.env.database_url)
   .then((result) => {
     //  app.listen(3000, "192.168.29.68");
     app.listen(process.env.port);
