@@ -4,6 +4,7 @@ const feedRoutes = require("./routes/feed");
 const authRoutes = require("./routes/auth");
 const mongoose = require("mongoose");
 const path = require("path");
+require('dotenv').config()
 
 const app = express();
 
@@ -36,6 +37,8 @@ app.use((err, req, res, next) => {
     data: data,
   });
 });
+
+console.log(process.env.database_url);
 
 mongoose
   .connect(process.env.database_url)
