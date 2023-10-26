@@ -3,34 +3,48 @@ const User = require("../model/user");
 const Post = require("../model/post");
 const {
   HTTPStatus: { OK_STATUS, BAD_REQUEST },
-  QUERY: { findOne, create, countDocuments, find, findOneAndUpdate },
+  QUERY: { findOne, create, find, findOneAndUpdate,findOneAndDelete },
   commonQuery,
 } = require("../helper/common_helper");
 
+const https = require('https');
+const axios = require('axios');
+
 exports.getPosts = async (req, res, next) => {
-  const currentPage = req.query.page || 1;
-  const perPage = 2;
-  const totalPost = await commonQuery(Post, countDocuments);
+  // const currentPage = req.query.page || 1;
+  // const perPage = 2;
+  // const totalPost = await commonQuery(Post, countDocuments);
+  const userId = req.user.verify.userId;
+  console.log("userId ::" +userId);
   const posts = await commonQuery(
     Post,
     find,
-    {},
-    {},
-    "",
-    [],
-    perPage,
-    currentPage
+    {
+      creator: req.user.verify.userId,
+    },
+    {createdAt: -1},
+    // "",
+    // [],
+    // perPage,
+    // currentPage
   );
+  console.log(posts.status);
   if (posts.status == 1) {
     res.status(OK_STATUS).json({
       message: "Fetched posts successfully.",
+      totalItems: posts.data.length,
       posts: posts,
-      totalItems: totalPost.data,
+    });
+  } else if (posts.status == 2) {
+    res.status(OK_STATUS).json({
+      message: "Fetched posts successfully.",
+      totalItems:0,
+      posts: [],
     });
   } else {
     return res
       .status(BAD_REQUEST)
-      .json({ status: 0, message: "Please check the params" });
+      .json({ status: 0, message: "Something went wrong!" });
   }
   //   try {
   //     const totalCount = await Post.find().count();
@@ -53,20 +67,20 @@ exports.getPosts = async (req, res, next) => {
 
 exports.creatPosts = async (req, res, next) => {
   try {
-    if (!req.file) {
-      return res
-        .status(BAD_REQUEST)
-        .json({ status: 0, message: "Please select the image!" });
-    }
+    // if (!req.file) {
+    //   return res
+    //     .status(BAD_REQUEST)
+    //     .json({ status: 0, message: "Please select the image!" });
+    // }
 
     const title = req.body.title;
     const subTitle = req.body.subTitle;
-    const imageUrl = req.file.destination + "/" + req.file.filename;
+    // const imageUrl = req.file.destination + "/" + req.file.filename;
 
     const createPost = await commonQuery(Post, create, {
       title: title,
       subTitle: subTitle,
-      imageUrl: imageUrl,
+      // imageUrl: imageUrl,
       creator: req.user.verify.userId,
     });
 
@@ -182,36 +196,90 @@ exports.editPost = async (req, res, next) => {
 
 exports.deletePost = async (req, res, next) => {
   try {
-    const postId = req.params.postId;
-    const post = await Post.findById(postId);
-    if (!post) {
-      const err = Error("Not able to find post with this id!");
-      err.statusCode = 422;
-      throw err;
+    // const postId = req.params.postId;
+    // const post = await Post.findById(postId);
+    console.log("PostID" );
+
+    const { postId } = req.body;
+    console.log("PostID" +postId);
+    const deleptePost = await commonQuery(Post, findOneAndDelete, { _id: postId });
+
+    if (deleptePost.status == 1) {
+      res.status(OK_STATUS).json({
+        statusCode: 200,
+        message: "Successfully Deleted!",
+      });
+    }else{
+      return res
+      .status(BAD_REQUEST)
+      .json({ status: 0, message: "Something went wrong!" });
     }
 
-    if (post.creator.toString() !== req.userId) {
-      const err = Error("Not Authorised for edit!");
-      err.statusCode = 403;
-      throw err;
-    }
+    // if (!post) {
+    //   const err = Error("Not able to find post with this id!");
+    //   err.statusCode = 422;
+    //   throw err;
+    // }
 
-    clearImage(post.imageUrl);
-    await Post.findByIdAndRemove(postId);
-    const user = await User.findById({ _id: req.userId });
-    user.posts.pull(postId);
-    await user.save();
+    // if (post.creator.toString() !== req.userId) {
+    //   const err = Error("Not Authorised for edit!");
+    //   err.statusCode = 403;
+    //   throw err;
+    // }
 
-    res.status(200).json({
-      statusCode: 200,
-      message: "Successfully Deleted!",
-    });
+    // clearImage(post.imageUrl);
+    // await Post.findByIdAndRemove(postId);
+    // const user = await User.findById({ _id: req.userId });
+    // user.posts.pull(postId);
+    // await user.save();
+
+  
   } catch (error) {
     if (!error.statusCode) {
       error.statusCode = 500;
     }
     next(error);
   }
+};
+
+
+exports.getQData = async (req,res,next)=>{
+const id = req.params.id;
+console.log('id :>> ',id);
+
+const urlCall = `https://api.alquran.cloud/v1/surah/${id}/editions/quran-uthmani,en.asad,en.pickthall,en.walk,ar.alafasy`;
+
+console.log('URL :>> ',urlCall);
+
+  axios.get(urlCall)
+  .then(function (response) {
+    // handle success
+
+    res.status(200).json({ status: 1, message:response.data.data[4]});
+  })
+  .catch(function (error) {
+    // handle error
+    console.log("error");
+  })
+  .finally(function () {
+    // always executed
+  });
+
+
+//   const request = https.get('https://api.alquran.cloud/v1/surah/1/editions/quran-uthmani,en.asad,en.pickthall,en.walk,ar.alafasy', (response) => {
+//     res.on('data', chunk => {
+//       data += chunk;
+//     });
+    
+//     res.on('end', () => {
+//       data = JSON.parse(data);
+//       console.log("Response :: " +data.body);
+//     })
+
+//   }).on('error', err => {console.log('err >> ', err)});
+
+//  console.log('response 123 :>> ' +JSON.parse(request).body);
+
 };
 
 const clearImage = (filePath) => {

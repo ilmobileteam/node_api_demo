@@ -11,10 +11,10 @@ const postsSchema = new Schema({
         type: String,
         required: true
     },
-    imageUrl: {
-        type: String,
-        required: true
-    },
+    // imageUrl: {
+    //     type: String,
+    //     required: true
+    // },
     creator: {
         type: Schema.Types.ObjectId,
         ref: 'Users',

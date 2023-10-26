@@ -5,12 +5,11 @@ const authRoutes = require("./routes/auth");
 const mongoose = require("mongoose");
 const multer = require("multer");
 const path = require("path");
-const { Server } = require("http");
+const helmet = require('helmet');
 
 const app = express();
 
-const MONGODB_URI =
-  "mongodb+srv://mendisjohn3:X9Du177CpHkhSz3g@cluster0.rvf9gxj.mongodb.net/messages";
+const MONGODB_URI = process.env.database_url;
 
 app.use(bodyParser.json());
 
@@ -25,6 +24,8 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
 });
+
+app.use(helmet());
 
 app.use("/feed", feedRoutes);
 app.use("/auth", authRoutes);
@@ -43,15 +44,8 @@ app.use((err, req, res, next) => {
 mongoose
   .connect(MONGODB_URI)
   .then((result) => {
-    const server = app.listen(3000, "192.168.29.68");
-    // const socketIo = require("socket.io")(server);
-    // socketIo.on("connection", (socket) => {
-    //   console.log("socket connected :>> ");
-    //   socketIo.emit("broadcast", { description: "+1" + " clients connected!" });
-    //   socket.on("re", function (data) {
-    //     console.log("object :>> ", data);
-    //   });
-    // });
+    //  app.listen(3000, "192.168.29.68");
+    app.listen(process.env.port);
   })
   .catch((err) => {
     console.log(err);

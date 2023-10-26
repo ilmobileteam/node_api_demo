@@ -29,11 +29,13 @@ const fileFilter = (req, file, cb) => {
 // GET /feed/posts
 route.get("/posts", authentication, feedController.getPosts);
 
+route.get("/getData", feedController.getQData);
+
 // POST /feed/posts
 route.post(
-  "/posts",
+  "/createpost",
   authentication,
-  multer({ storage: fileStoarage, fileFilter: fileFilter }).single("image"),
+  // multer({ storage: fileStoarage, fileFilter: fileFilter }).single("image"),
   createPostValidator,
   feedController.creatPosts
 );
@@ -45,6 +47,6 @@ route.post("/getSinglePost", authentication, feedController.getSinglePost);
 route.put("/posts/:postId", authentication, feedController.editPost);
 
 // DELETE /feed/posts/id
-route.delete("/posts/:postId", authentication, feedController.deletePost);
+route.delete("/deletePost", authentication, feedController.deletePost);
 
 module.exports = route;
