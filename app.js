@@ -43,8 +43,8 @@ console.log(process.env.database_url);
 mongoose
   .connect(process.env.database_url)
   .then((result) => {
-    //  app.listen(3000, "192.168.29.68");
-    app.listen(process.env.port);
+     app.listen(3000, "192.168.29.68");
+    // app.listen(process.env.port);
   })
   .catch((err) => {
     console.log(err);

@@ -29,8 +29,6 @@ const fileFilter = (req, file, cb) => {
 // GET /feed/posts
 route.get("/posts", authentication, feedController.getPosts);
 
-route.get("/getData", feedController.getQData);
-
 // POST /feed/posts
 route.post(
   "/createpost",

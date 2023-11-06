@@ -35,11 +35,21 @@ exports.signup = async (req, res, next) => {
           email: email,
           userId: createUser.data._id,
         });
+
+        const userData = {
+          email: createUser.data.email,
+          name: createUser.data.name,
+          posts: [],
+          _id: createUser.data._id,
+          createdAt: createUser.data.createdAt,
+          updatedAt: createUser.data.updatedAt,
+        };
+
         return res.status(CREATED).json({
           status: 1,
-          message: "User is created successfully.",
+          message: "User created successfully.",
           token: token.token,
-          data: createUser.data,
+          data: userData,
         });
       } else {
         return res
@@ -81,23 +91,32 @@ exports.login = async (req, res, next) => {
         email: email,
         userId: findUser.data._id,
       });
-      console.log("token :>> ", token);
+
+      const userData = {
+        email: findUser.data.email,
+        name: findUser.data.name,
+        posts: findUser.data.posts,
+        _id: findUser.data._id,
+        createdAt: findUser.data.createdAt,
+        updatedAt: findUser.data.updatedAt,
+      };
+
       return res.status(OK_STATUS).json({
         status: 1,
-        message: "User is logged in successfully.",
+        message: "User logged in successfully.",
         token: token.token,
-        data: findUser.data,
+        data: userData,
       });
     } else {
       return res
         .status(BAD_REQUEST)
-        .json({ status: 0, message: "Password is wrong." });
+        .json({ status: 0, message: "Please check password." });
     }
   } else {
     if (findUser?.data?.is_delete) {
       return res
         .status(BAD_REQUEST)
-        .json({ status: 0, message: "You need to signup again." });
+        .json({ status: 0, message: "User does not exist." });
     } else {
       return res
         .status(BAD_REQUEST)

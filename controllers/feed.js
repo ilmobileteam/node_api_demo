@@ -1,145 +1,99 @@
-const { validationResult } = require("express-validator");
 const User = require("../model/user");
 const Post = require("../model/post");
 const {
   HTTPStatus: { OK_STATUS, BAD_REQUEST },
-  QUERY: { findOne, create, find, findOneAndUpdate,findOneAndDelete },
+  QUERY: { findOne, create, find, findOneAndUpdate, findOneAndDelete },
+  common_error_message,
   commonQuery,
 } = require("../helper/common_helper");
 
-const https = require('https');
-const axios = require('axios');
-
 exports.getPosts = async (req, res, next) => {
-  // const currentPage = req.query.page || 1;
-  // const perPage = 2;
-  // const totalPost = await commonQuery(Post, countDocuments);
   const userId = req.user.verify.userId;
-  console.log("userId ::" +userId);
   const posts = await commonQuery(
     Post,
     find,
     {
-      creator: req.user.verify.userId,
+      creator: userId,
     },
-    {createdAt: -1},
-    // "",
-    // [],
-    // perPage,
-    // currentPage
+    { createdAt: -1 }
   );
   console.log(posts.status);
   if (posts.status == 1) {
     res.status(OK_STATUS).json({
-      message: "Fetched posts successfully.",
-      totalItems: posts.data.length,
-      posts: posts,
+      status: 1,
+      message: "Posts fetched successfully.",
+      totalPosts: posts.data.length,
+      posts: posts.data,
     });
   } else if (posts.status == 2) {
     res.status(OK_STATUS).json({
-      message: "Fetched posts successfully.",
-      totalItems:0,
-      posts: [],
+      status: 1,
+      message: "Posts fetched successfully.",
+      totalItems: 0,
+      post: [],
     });
   } else {
     return res
       .status(BAD_REQUEST)
-      .json({ status: 0, message: "Something went wrong!" });
+      .json({ status: 0, message: common_error_message });
   }
-  //   try {
-  //     const totalCount = await Post.find().count();
-  //     const posts = await Post.find()
-  //       .skip((currentPage - 1) * perPage)
-  //       .limit(perPage);
-
-  //     res.status(200).json({
-  //       message: "Fetched posts successfully.",
-  //       posts: posts,
-  //       totalItems: totalCount,
-  //     });
-  //   } catch (error) {
-  //     if (!err.statusCode) {
-  //       err.statusCode = 500;
-  //     }
-  //     next(err);
-  //   }
 };
 
 exports.creatPosts = async (req, res, next) => {
   try {
-    // if (!req.file) {
-    //   return res
-    //     .status(BAD_REQUEST)
-    //     .json({ status: 0, message: "Please select the image!" });
-    // }
-
     const title = req.body.title;
     const subTitle = req.body.subTitle;
-    // const imageUrl = req.file.destination + "/" + req.file.filename;
+    const userId = req.user.verify.userId;
 
     const createPost = await commonQuery(Post, create, {
       title: title,
       subTitle: subTitle,
-      // imageUrl: imageUrl,
-      creator: req.user.verify.userId,
+      creator: userId,
     });
 
     if (createPost.status == 1) {
       const user = await commonQuery(User, findOne, {
-        _id: req.user.verify.userId,
+        _id: userId,
       });
       if (user.status == 1) {
-        // console.log("user :>> ", user.data.posts);
-        // user.data.posts.push(createPost);
         const updated = await commonQuery(
           User,
           findOneAndUpdate,
           {
-            _id: req.user.verify.userId,
+            _id: userId,
           },
           { $push: { posts: createPost.data._id } }
         );
         if (updated.status == 1) {
           res.status(OK_STATUS).json({
-            message: "Successfully Created!",
-            userId: req.user.verify.userId,
+            status: 1,
+            message: "Post created successfully.",
             post: createPost.data,
           });
         }
       }
     }
-
-    // const user = await User.findById({ _id: req.user.verify.userId });
-    // user.posts.push(post);
-    // await user.save();
-
-    // res.status(200).json({
-    //   message: "Successfully Created!",
-    //   data: post,
-    //   userId: req.user.verify.userId,
-    // });
   } catch (error) {
-    console.log("error :>> ", error);
-    if (!error.statusCode) {
-      error.statusCode = 500;
-    }
-    next(error);
+    res.status(BAD_REQUEST).json({
+      status: 0,
+      message: common_error_message,
+    });
   }
 };
 
 exports.getSinglePost = async (req, res, next) => {
-  const { postId } = req.body;
+  const postId = req.body.postId;
   const singlePost = await commonQuery(Post, findOne, { _id: postId });
-  console.log("singlePost :>> ", postId);
   if (singlePost.status == 1) {
     res.status(OK_STATUS).json({
-      message: "Successfully Fetched!",
-      data: singlePost,
+      status: 1,
+      message: "Post fetched successfully.",
+      post: singlePost.data,
     });
   } else {
     return res
       .status(BAD_REQUEST)
-      .json({ status: 0, message: "Please check the postId." });
+      .json({ status: 0, message: common_error_message });
   }
 };
 
@@ -195,94 +149,19 @@ exports.editPost = async (req, res, next) => {
 };
 
 exports.deletePost = async (req, res, next) => {
-  try {
-    // const postId = req.params.postId;
-    // const post = await Post.findById(postId);
-    console.log("PostID" );
-
-    const { postId } = req.body;
-    console.log("PostID" +postId);
-    const deleptePost = await commonQuery(Post, findOneAndDelete, { _id: postId });
-
-    if (deleptePost.status == 1) {
-      res.status(OK_STATUS).json({
-        statusCode: 200,
-        message: "Successfully Deleted!",
-      });
-    }else{
-      return res
-      .status(BAD_REQUEST)
-      .json({ status: 0, message: "Something went wrong!" });
-    }
-
-    // if (!post) {
-    //   const err = Error("Not able to find post with this id!");
-    //   err.statusCode = 422;
-    //   throw err;
-    // }
-
-    // if (post.creator.toString() !== req.userId) {
-    //   const err = Error("Not Authorised for edit!");
-    //   err.statusCode = 403;
-    //   throw err;
-    // }
-
-    // clearImage(post.imageUrl);
-    // await Post.findByIdAndRemove(postId);
-    // const user = await User.findById({ _id: req.userId });
-    // user.posts.pull(postId);
-    // await user.save();
-
-  
-  } catch (error) {
-    if (!error.statusCode) {
-      error.statusCode = 500;
-    }
-    next(error);
-  }
-};
-
-
-exports.getQData = async (req,res,next)=>{
-const id = req.params.id;
-console.log('id :>> ',id);
-
-const urlCall = `https://api.alquran.cloud/v1/surah/${id}/editions/quran-uthmani,en.asad,en.pickthall,en.walk,ar.alafasy`;
-
-console.log('URL :>> ',urlCall);
-
-  axios.get(urlCall)
-  .then(function (response) {
-    // handle success
-
-    res.status(200).json({ status: 1, message:response.data.data[4]});
-  })
-  .catch(function (error) {
-    // handle error
-    console.log("error");
-  })
-  .finally(function () {
-    // always executed
+  const { postId } = req.body;
+  const deleptePost = await commonQuery(Post, findOneAndDelete, {
+    _id: postId,
   });
 
-
-//   const request = https.get('https://api.alquran.cloud/v1/surah/1/editions/quran-uthmani,en.asad,en.pickthall,en.walk,ar.alafasy', (response) => {
-//     res.on('data', chunk => {
-//       data += chunk;
-//     });
-    
-//     res.on('end', () => {
-//       data = JSON.parse(data);
-//       console.log("Response :: " +data.body);
-//     })
-
-//   }).on('error', err => {console.log('err >> ', err)});
-
-//  console.log('response 123 :>> ' +JSON.parse(request).body);
-
-};
-
-const clearImage = (filePath) => {
-  filePath = path.join(__dirname, "..", filePath);
-  fs.unlink(filePath, (err) => console.log(err));
+  if (deleptePost.status == 1) {
+    res.status(OK_STATUS).json({
+      status: 1,
+      message: "Post deleted successfully.",
+    });
+  } else {
+    return res
+      .status(BAD_REQUEST)
+      .json({ status: 0, message: common_error_message });
+  }
 };
