@@ -97,6 +97,7 @@ const commonQuery = async (
       };
     }
   } catch (error) {
+    console.log("error :>> ", error);
     return {
       status: 0,
       error: error,

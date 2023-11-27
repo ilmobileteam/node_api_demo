@@ -2,13 +2,12 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const feedRoutes = require("./routes/feed");
 const authRoutes = require("./routes/auth");
+const movieRoutes = require("./routes/movie");
 const mongoose = require("mongoose");
 const path = require("path");
 require("dotenv").config();
 
 const app = express();
-
-const MONGODB_URI = process.env.database_url;
 
 app.use(bodyParser.json());
 
@@ -26,6 +25,7 @@ app.use((req, res, next) => {
 
 app.use("/feed", feedRoutes);
 app.use("/auth", authRoutes);
+app.use("/movies", movieRoutes);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
@@ -43,8 +43,8 @@ console.log(process.env.database_url);
 mongoose
   .connect(process.env.database_url)
   .then((result) => {
-    //  app.listen(3000, "192.168.29.68");
-    app.listen(process.env.port);
+    app.listen(3000);
+    // app.listen(process.env.port);
   })
   .catch((err) => {
     console.log(err);
